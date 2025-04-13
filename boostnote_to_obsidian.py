@@ -74,6 +74,8 @@ def generate_tags(tags_input):
             tag_no_whitespace = trim_and_replace(tag)
             if is_valid_obsidian_tag(tag_no_whitespace):
                 tags.append(tag_no_whitespace)
+            else:
+                print("Tag is not a valid Obsidian tag and cannot be converted: ", tag)
 
         tags_text = '#' + " #".join(tags) + os.linesep
     else:
