@@ -1,10 +1,12 @@
-# CSON Parser
+# Boostnote to Obsidian Converter
 
-A simple Python parser for CSON (CoffeeScript Object Notation) format, primarily designed for converting legacy Boostnote notes to Obsidian format.
+A tool for converting your Boostnote notes to Obsidian format. This project includes a lightweight CSON parser specifically designed to handle Boostnote's note format.
+
+If you have any issues or want to improve it - create a github issue for it and I will gladly take a look at it. See limitations below.
 
 ## Quick Start
 
-### Converting Boostnote Notes to Obsidian
+### Converting Legacy Boostnote Notes to Obsidian
 
 To convert your Boostnote notes to Obsidian format:
 
@@ -53,12 +55,14 @@ pip install -r requirements.txt
 
 ## Description
 
-This project provides a lightweight CSON parser implementation that focuses on the specific needs of converting Boostnote notes to Obsidian format. While it doesn't support the full CSON specification, it handles the essential features needed for this conversion task.
+This project helps you migrate your notes from Boostnote to Obsidian. It includes a specialized CSON parser that handles Boostnote's specific note format, converting your notes while preserving their structure, tags, and metadata.
 
 ## Features
 
-- Parses CSON format into Python dictionaries
-- Supports basic CSON syntax including:
+- Converts Boostnote `.cson` files to Obsidian markdown format
+- Preserves folder structure using information from boostnote.json
+- Maintains tags and metadata in Obsidian-compatible format
+- Handles Boostnote-specific CSON syntax including:
   - Strings (single and multi-line)
   - Numbers
   - Booleans
@@ -68,7 +72,9 @@ This project provides a lightweight CSON parser implementation that focuses on t
 
 ## Limitations
 
-The parser has several limitations that users should be aware of:
+### Parser Limitations
+
+The CSON parser has several limitations that users should be aware of:
 
 1. **String Handling**:
    - String literals separated by whitespace are not connected into one string
@@ -96,35 +102,29 @@ The parser has several limitations that users should be aware of:
    - Indentation-based nesting is not supported
    - All nested structures must be properly delimited
 
-## Advanced Usage
+### Converter Limitations
 
-### Basic CSON Parsing
+The Boostnote to Obsidian conversion process has the following limitations:
 
-```python
-from cson_parser import parse_cson
-
-# Parse CSON string
-cson_string = '''
-title: "My Note"
-content: "This is a note"
-tags: [
-    "important"
-    "work"
-]
-'''
-result = parse_cson(cson_string)
-print(result)
-```
+1. **Attachments and Links**:
+   - No automatic detection or conversion of attachments
+   - Internal links between notes are not preserved
+   - Contributions implementing these features are welcome!
 
 ## Project Structure
 
-- `cson_parser.py` - Main parser implementation
-- `boostnote_to_obsidian.py` - Utility for converting Boostnote notes to Obsidian format
-- `tests/` - Test cases for the parser
+- `boostnote_to_obsidian.py` - Main conversion script
+- `cson_parser.py` - Supporting CSON parser implementation
+- `tests/` - Test cases for the CSON parser
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! We're particularly interested in submissions that add support for:
+- Attachment detection and conversion
+- Internal link preservation
+- Other Boostnote-specific features
+
+Please feel free to submit a Pull Request.
 
 ## License
 
