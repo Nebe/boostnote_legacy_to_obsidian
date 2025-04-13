@@ -24,7 +24,7 @@ LeafTokenValueType = Optional[
         str,  # string literals
         float,  # num literals
         bool,  # false or true literals
-        # date  # some string literals are in fact formatted date representations]
+        # date  # some string literals are in fact formatted date representations
     ]
 ]
 
@@ -83,12 +83,11 @@ class DelimitedPolicyMixin:
 
 
 class CSON_StringBase(DelimitedPolicyMixin, CSON_LeafToken):
-
     def __init__(self, start_index: int, value_: AnyStr = ""):
         super(CSON_StringBase, self).__init__(start_index=start_index, value_=value_)
 
     def consume_next_sub_element(self, str_input, start_index):
-        # if backslash then consume it and  the char after it as well, to avoid it being recognized as a delimiter.
+        # if backslash then consume it and the char after it as well, to avoid it being recognized as a delimiter.
         if str_input[start_index] == "\\":
             self.value += str_input[start_index:start_index + 2]
             return start_index + 2
@@ -139,6 +138,7 @@ def consume_name(str_input, start_index):
     if name in ["false", "true"]:
         return None
 
+    i = ignore_whitespace(str_input, i)
     return ParserResultWrapper(i, CSON_NameToken(start_index, name))
 
 
@@ -199,15 +199,21 @@ class CSON_DictToken(CSON_TokenCompositeBase):
             return document.value
 
         while j < input_length:
-            j = document.consume_next_sub_element(str_input, j)
+            next_index = document.consume_next_sub_element(str_input, j)
+            if next_index is None:
+                break
+            j = next_index
 
         return document.value
 
     def _consume_key_value(self, str_input: AnyStr, start_index: int) -> Optional[tuple[int, AnyStr, AnyTokenValueType]]:
 
-        i, name_token = consume_name(str_input, start_index)
+        parser_result = consume_name(str_input, start_index)
+        if parser_result:
+            i, name_token = parser_result
+        else:
+            return
 
-        i = ignore_whitespace(str_input, i)
         if i == len(str_input):
             return
 
@@ -236,6 +242,8 @@ class CSON_ListToken(CSON_TokenCompositeBase):
     def consume_next_sub_element(self, str_input, start_index):
         if parser_result := cson_gen_next_token(str_input, start_index, self._SUBTOKEN_TYPES):
             self._add_subtoken(parser_result.parsed_token.value)
+            # all consume methods expect the index to point at the start of the next token.
+            # to achieve this, whitespace is always consumed and ignored (right after the preceding token)
             next_index = ignore_whitespace(str_input, parser_result.next_input_index)
             return next_index
 
@@ -252,7 +260,7 @@ class CSON_NumberToken(CSON_LeafToken):
         index = start_index
         input_length = len(str_input)
         # 1. check whether its a negative number or not
-        if str_input[index] == "-":
+        if index < input_length and str_input[index] == "-":
             index += 1
 
         # 2. it must start with a number, CSON/JSON number literals are quite different from python's
@@ -271,10 +279,10 @@ class CSON_NumberToken(CSON_LeafToken):
             # 5. at least one number must follow the dot
             while index < input_length and str_input[index].isnumeric():
                 index += 1
-            else:
-                # 6 raise exception if no digits followed the dot
-                if index == index_after_dot:
-                    raise BrokenTokenError(start_index, f"A number cannot end with a dot: {str_input[start_index:index]}")
+
+            # 6 raise exception if no digits followed the dot
+            if index == index_after_dot:
+                raise BrokenTokenError(start_index, f"A number cannot end with a dot: {str_input[start_index:index]}")
 
         # if index is pointing at any other char then this is not a legal number,
         # i.e. 1.23f and 1.23% are not cson numbers
@@ -333,7 +341,7 @@ def cson_gen_next_token(str_input: AnyStr, i: int, subtoken_types: Collection[CS
         if result := subtoken_type.consume(str_input, i):
             return result
 
-    raise UnknownTokenError(i)
+    raise UnknownTokenError(i, str_input[i:i+50])
 
 
 def ignore_whitespace(str_input, current_index):
@@ -403,9 +411,10 @@ class TextEndedPrematurelyError(Exception):
 
 # raised if all token's consume methods fail (without raising BrokenTokenError)
 class UnknownTokenError(Exception):
-    def __init__(self, index):
+    def __init__(self, index, text):
         self.index = index
-        self.message = "Token type could not be detected: index {}.".format(index)
+        self.text = text
+        self.message = "Token type could not be detected: index {} text {}.".format(index, text)
         super().__init__(self.message)
 
 
